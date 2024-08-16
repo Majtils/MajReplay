@@ -1,3 +1,5 @@
+use maj_replay;
+
 fn main() {
-    println!("Hello, world!");
+    maj_replay::run();
 }
