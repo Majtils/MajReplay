@@ -1,0 +1,1 @@
+C:\Users\Edward\ Wang\Documents\majtils\MajReplay\maj_replay\target\debug\maj_replay.exe: C:\Users\Edward\ Wang\Documents\majtils\MajReplay\mahjong\src\lib.rs C:\Users\Edward\ Wang\Documents\majtils\MajReplay\maj_replay\src\lib.rs C:\Users\Edward\ Wang\Documents\majtils\MajReplay\maj_replay\src\main.rs

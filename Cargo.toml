@@ -1,11 +1,5 @@
-[package]
-name = "maj_replay"
-version = "0.1.0"
-authors = ["Edward Wang <edwardwang2003@gmail.com>"]
-edition = "2021"
-description = "A tool to load and replay hands in a Riichi Mahjong game"
-repository = "https://github.com/Majtils/MajReplay"
-license = "MIT OR Apache-2.0"
-keywords = ["riichi", "mahjong"]
-
-[dependencies]
+[workspace]
+members = [
+    "mahjong",
+    "maj_replay"
+]

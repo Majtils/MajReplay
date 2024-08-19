@@ -3,5 +3,12 @@
 version = 3
 
 [[package]]
+name = "mahjong"
+version = "0.1.0"
+
+[[package]]
 name = "maj_replay"
 version = "0.1.0"
+dependencies = [
+ "mahjong",
+]
