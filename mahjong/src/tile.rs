@@ -306,6 +306,7 @@ mod tile_tests {
                 tile::{DragonColor::*, HonorTile::*, MahjongTile::*, NumberTile::*},
                 Direction::*,
             };
+
             #[test]
             fn build_valid_wind_tile() {
                 let directions = [East, South, West, North];
@@ -369,7 +370,9 @@ mod tile_tests {
             }
         }
         mod error_tests {
+
             use crate::tile;
+
             #[test]
             fn not_enough_characters() {
                 let invalid_build_strings = ["", "a", "2"];
@@ -413,6 +416,7 @@ mod tile_tests {
     }
     mod get_number_tests {
         mod mahjong_tile_tests {
+
             use crate::{
                 tile::{
                     DragonColor::*,
@@ -444,7 +448,9 @@ mod tile_tests {
         }
 
         mod number_tile_tests {
+
             use crate::tile::{NumberTile::*, Tile};
+
             #[test]
             fn get_number_character_tile() {
                 for num in 0..=9 {
@@ -473,6 +479,7 @@ mod tile_tests {
         mod honor_tile_tests {
             use crate::tile::{DragonColor::*, HonorTile, HonorTile::*, Tile};
             use crate::Direction::*;
+
             fn test_with_pairs(tile_number_pairs: Vec<(HonorTile, u8)>) {
                 for (tile, num) in tile_number_pairs {
                     assert_eq!(tile.number(), num);
