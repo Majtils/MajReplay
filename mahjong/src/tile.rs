@@ -19,7 +19,7 @@ pub trait Tile {
     /// # Examples
     /// ```rust
     /// use mahjong::Direction;
-    /// use mahjong::tile::{NumberTile, HonorTile, DragonColor};
+    /// use mahjong::tile::{NumberTile, HonorTile, DragonColor, Tile};
     /// let three_dot_tile = NumberTile::Dot(3);
     /// let three_dot_number = three_dot_tile.number();
     /// assert_eq!(three_dot_number, 3);
@@ -41,7 +41,7 @@ pub trait Tile {
     /// # Examples
     /// ```rust
     /// use mahjong::Direction;
-    /// use mahjong::tile::{NumberTile, HonorTile, DragonColor};
+    /// use mahjong::tile::{NumberTile, HonorTile, DragonColor, Tile};
     /// let three_dot_tile = NumberTile::Dot(3);
     /// let three_dot_suit = three_dot_tile.suit();
     /// assert_eq!(three_dot_suit, 'p');
@@ -55,36 +55,38 @@ pub trait Tile {
     /// assert_eq!(white_dragon_suit, 'z');
     /// ```
     fn suit(&self) -> char;
+}
 
-    /// The build function takes in a string representation of a tile such as
-    /// 1z or 3p and converts into the corresponding White Dragon or 3 dots
-    /// tile type.
-    ///
-    /// If successful, it returns an Ok with a type that implements the Tile trait.
-    /// Otherwise, it errors with a String error message.
-    /// # Errors
-    /// The function expects a string of length 2, a number and then a character
-    /// If there are more than 2 letters or the string is not a valid mahjong tile,
-    /// an error is returned with a String message.
-    /// # Examples
-    /// ```rust
-    /// use mahjong::tile::Tile;
-    /// let three_dot_tile = Tile::build("3p");
-    /// assert!(three_dot_tile.is_ok());
-    ///
-    /// let too_many_letters = Tile::build("3pp");
-    /// assert!(too_many_letters.is_err());
-    ///
-    /// let invalid_tile = Tile::build("10z");
-    /// assert!(invalid_tile.is_err());
-    /// ```
-    fn build<T: Tile>(tile_string: &str) -> Result<T, String>;
+/// This enum represents a "Union" type to bring together the two different types
+/// of Riichi Mahjong tiles
+#[derive(Debug, PartialEq, Eq)]
+pub enum MahjongTile {
+    Honor(HonorTile),
+    Number(NumberTile),
+}
+
+impl Tile for MahjongTile {
+    fn suit(&self) -> char {
+        use crate::tile::MahjongTile::*;
+        match self {
+            Honor(tile) => tile.suit(),
+            Number(tile) => tile.suit(),
+        }
+    }
+    fn number(&self) -> u8 {
+        use crate::tile::MahjongTile::*;
+        match self {
+            Honor(tile) => tile.number(),
+            Number(tile) => tile.number(),
+        }
+    }
 }
 
 /// This type represents a number tile. There are three suits of number tiles:
 /// characters (manzu), dots (pinzu), and bamboo (souzu).
 /// The number represents the number of the tile except for a 0 which represents
 /// a red five tile of that suit.
+#[derive(Debug, PartialEq, Eq)]
 pub enum NumberTile {
     /// The character or manzu tiles are written in Chinese/Kanji.
     Character(u8),
@@ -103,11 +105,12 @@ impl Tile for NumberTile {
     }
 
     fn suit(&self) -> char {
-        'a'
-    }
-
-    fn build<T: Tile>(tile_string: &str) -> Result<T, String> {
-        Err("".to_string())
+        use NumberTile::*;
+        match *self {
+            Character(_) => 'm',
+            Dot(_) => 'p',
+            Bamboo(_) => 's',
+        }
     }
 }
 
@@ -115,6 +118,7 @@ use crate::Direction;
 /// This type represents an honor tile. The honors are broken up to wind tiles
 /// and dragon tiles. There are four types of wind tiles and three types of
 /// dragon tiles.
+#[derive(Debug, PartialEq, Eq)]
 pub enum HonorTile {
     /// This represents a wind tile. There are four variants depending on the
     /// direction: north, east, south, west.
@@ -126,12 +130,8 @@ pub enum HonorTile {
 }
 
 impl Tile for HonorTile {
-    fn build<T: Tile>(tile_string: &str) -> Result<T, String> {
-        Err("".to_string())
-    }
-
     fn suit(&self) -> char {
-        'a'
+        'z'
     }
 
     fn number(&self) -> u8 {
@@ -151,20 +151,303 @@ impl Tile for HonorTile {
 }
 
 /// This type represents the colors that a dragon tile can be.
+#[derive(Debug, PartialEq, Eq)]
 pub enum DragonColor {
     White,
     Green,
     Red,
 }
 
+/// The build function takes in a string representation of a tile such as
+/// 1z or 3p and converts into the corresponding White Dragon or 3 dots
+/// tile type.
+///
+/// If successful, it returns an Ok with a MahjongTile type.
+/// Otherwise, it errors with a String error message.
+/// # Errors
+/// The function expects a string of length 2, a number and then a character
+/// If there are more than 2 letters or the string is not a valid mahjong tile,
+/// an error is returned with a String message.
+/// # Examples
+/// ```rust
+/// use mahjong::tile;
+/// let three_dot_tile = tile::build("3p");
+/// assert!(three_dot_tile.is_ok());
+///
+/// let too_many_letters = tile::build("3pp");
+/// assert!(too_many_letters.is_err());
+///
+/// let invalid_tile = tile::build("10z");
+/// assert!(invalid_tile.is_err());
+/// ```
+pub fn build(tile_string: &str) -> Result<MahjongTile, String> {
+    use crate::{
+        tile::{DragonColor::*, HonorTile::*, MahjongTile::*, NumberTile::*},
+        Direction::*,
+    };
+
+    if tile_string.chars().count() != 2 {
+        return Err("Invalid number of characters".to_string());
+    };
+
+    let mut chars = tile_string.chars();
+
+    let number = chars
+        .next()
+        .expect("Previous error checking should make first character valid")
+        .to_digit(10);
+    if number.is_none() {
+        return Err("First character is not a number".to_string());
+    }
+
+    let number =
+        number.expect("Previous error checking should make first character a number") as u8;
+    let suit = chars
+        .next()
+        .expect("Previous error checking should make second character valid");
+
+    match (suit, number) {
+        ('z', 1) => Ok(Honor(Wind(East))),
+        ('z', 2) => Ok(Honor(Wind(South))),
+        ('z', 3) => Ok(Honor(Wind(West))),
+        ('z', 4) => Ok(Honor(Wind(North))),
+        ('z', 5) => Ok(Honor(Dragon(White))),
+        ('z', 6) => Ok(Honor(Dragon(Green))),
+        ('z', 7) => Ok(Honor(Dragon(Red))),
+        ('z', _) => Err("Invalid number for tile".to_string()),
+        ('m', num) => Ok(Number(Character(num))),
+        ('p', num) => Ok(Number(Dot(num))),
+        ('s', num) => Ok(Number(Bamboo(num))),
+        _ => Err("Invalid suit".to_string()),
+    }
+}
+
 #[cfg(test)]
 mod tile_tests {
+    mod build_tile_tests {
+        mod number_tile_tests {
+            use crate::{
+                tile,
+                tile::{HonorTile::*, MahjongTile::*, NumberTile::*},
+            };
+
+            #[test]
+            fn build_valid_character_tile() {
+                for num in 0..=9 {
+                    let build_string = format!("{num}m");
+                    let tile = tile::build(&build_string).expect("Tile should be valid");
+                    match tile {
+                        Number(Character(n)) => assert_eq!(n, num),
+                        Number(Bamboo(_)) => {
+                            panic!("Created a bamboo tile when a character tile was expected")
+                        }
+                        Number(Dot(_)) => {
+                            panic!("Created a dot tile when a character tile was expected")
+                        }
+                        Honor(Dragon(_)) => {
+                            panic!("Created a dragon tile when a character tile was expected")
+                        }
+                        Honor(Wind(_)) => {
+                            panic!("Created a wind tile when a character tile was expected")
+                        }
+                    }
+                }
+            }
+
+            #[test]
+            fn build_valid_bamboo_tile() {
+                for num in 0..=9 {
+                    let build_string = format!("{num}s");
+                    let tile = tile::build(&build_string).expect("Tile should be valid");
+                    match tile {
+                        Number(Bamboo(n)) => assert_eq!(n, num),
+                        Number(Character(_)) => {
+                            panic!("Created a character tile when a bamboo tile was expected")
+                        }
+                        Number(Dot(_)) => {
+                            panic!("Created a dot tile when a bamboo tile was expected")
+                        }
+                        Honor(Dragon(_)) => {
+                            panic!("Created a dragon tile when a bamboo tile was expected")
+                        }
+                        Honor(Wind(_)) => {
+                            panic!("Created a wind tile when a bamboo tile was expected")
+                        }
+                    }
+                }
+            }
+
+            #[test]
+            fn build_valid_dot_tile() {
+                for num in 0..=9 {
+                    let build_string = format!("{num}p");
+                    let tile = tile::build(&build_string).expect("Tile should be valid");
+                    match tile {
+                        Number(Dot(n)) => assert_eq!(n, num),
+                        Number(Character(_)) => {
+                            panic!("Created a character tile when a dot tile was expected")
+                        }
+                        Number(Bamboo(_)) => {
+                            panic!("Created a bamboo tile when a dot tile was expected")
+                        }
+                        Honor(Dragon(_)) => {
+                            panic!("Created a dragon tile when a dot tile was expected")
+                        }
+                        Honor(Wind(_)) => {
+                            panic!("Created a wind tile when a dot tile was expected")
+                        }
+                    }
+                }
+            }
+        }
+        mod honor_tile_tests {
+            use crate::{
+                tile,
+                tile::{DragonColor::*, HonorTile::*, MahjongTile::*, NumberTile::*},
+                Direction::*,
+            };
+            #[test]
+            fn build_valid_wind_tile() {
+                let directions = [East, South, West, North];
+                for num in 1..=4 {
+                    let build_string = format!("{num}z");
+                    let tile = tile::build(&build_string).expect("Tile should be valid");
+                    match tile {
+                        Number(Dot(_)) => {
+                            panic!("Created a dot tile when a wind tile was expected")
+                        }
+                        Number(Character(_)) => {
+                            panic!("Created a character tile when a wind tile was expected")
+                        }
+                        Number(Bamboo(_)) => {
+                            panic!("Created a bamboo tile when a wind tile was expected")
+                        }
+                        Honor(Dragon(_)) => {
+                            panic!("Created a dragon tile when a wind tile was expected")
+                        }
+                        Honor(Wind(dir)) => {
+                            assert_eq!(directions[num - 1], dir);
+                        }
+                    }
+                }
+            }
+
+            #[test]
+            fn build_valid_dragon_tile() {
+                let colors = [White, Green, Red];
+                for num in 5..=7 {
+                    let build_string = format!("{num}z");
+                    let tile = tile::build(&build_string).expect("Tile should be valid");
+                    match tile {
+                        Number(Dot(_)) => {
+                            panic!("Created a dot tile when a dragon tile was expected")
+                        }
+                        Number(Character(_)) => {
+                            panic!("Created a character tile when a dragon tile was expected")
+                        }
+                        Number(Bamboo(_)) => {
+                            panic!("Created a bamboo tile when a dragon tile was expected")
+                        }
+                        Honor(Wind(_)) => {
+                            panic!("Created a wind tile when a dragon tile was expected")
+                        }
+                        Honor(Dragon(color)) => {
+                            assert_eq!(colors[num - 5], color);
+                        }
+                    }
+                }
+            }
+
+            #[test]
+            fn build_invalid_honor_tile() {
+                for num in [0, 8, 9] {
+                    let build_string = format!("{num}z");
+                    let error_message =
+                        tile::build(&build_string).expect_err("Tile should be invalid");
+                    assert_eq!(error_message, "Invalid number for tile");
+                }
+            }
+        }
+        mod error_tests {
+            use crate::tile;
+            #[test]
+            fn not_enough_characters() {
+                let invalid_build_strings = ["", "a", "2"];
+                for build_string in invalid_build_strings {
+                    let error_message =
+                        tile::build(&build_string).expect_err("Tile should be invalid");
+                    assert_eq!(error_message, "Invalid number of characters");
+                }
+            }
+
+            #[test]
+            fn too_many_characters() {
+                let invalid_build_strings = ["sdafkja", "1zz", "22asdf"];
+                for build_string in invalid_build_strings {
+                    let error_message =
+                        tile::build(&build_string).expect_err("Tile should be invalid");
+                    assert_eq!(error_message, "Invalid number of characters");
+                }
+            }
+
+            #[test]
+            fn first_character_not_digit() {
+                let invalid_build_strings = ["aa", "ss", "gz", "$s"];
+                for build_string in invalid_build_strings {
+                    let error_message =
+                        tile::build(&build_string).expect_err("Tile should be invalid");
+                    assert_eq!(error_message, "First character is not a number");
+                }
+            }
+
+            #[test]
+            fn invalid_suit() {
+                let invalid_build_strings = ["1a", "3b", "4c"];
+                for build_string in invalid_build_strings {
+                    let error_message =
+                        tile::build(&build_string).expect_err("Tile should be invalid");
+                    assert_eq!(error_message, "Invalid suit");
+                }
+            }
+        }
+    }
     mod get_number_tests {
+        mod mahjong_tile_tests {
+            use crate::{
+                tile::{
+                    DragonColor::*,
+                    HonorTile::*,
+                    MahjongTile::{self, *},
+                    NumberTile::*,
+                    Tile,
+                },
+                Direction::*,
+            };
+
+            fn test_with_pairs(tile_number_pairs: Vec<(MahjongTile, u8)>) {
+                for (tile, num) in tile_number_pairs {
+                    assert_eq!(tile.number(), num);
+                }
+            }
+
+            #[test]
+            fn get_number_mahjong_tile() {
+                let tile_number_pairs = vec![
+                    (Number(Dot(0)), 0),
+                    (Number(Bamboo(3)), 3),
+                    (Number(Character(8)), 8),
+                    (Honor(Wind(East)), 1),
+                    (Honor(Dragon(Red)), 7),
+                ];
+                test_with_pairs(tile_number_pairs);
+            }
+        }
+
         mod number_tile_tests {
             use crate::tile::{NumberTile::*, Tile};
             #[test]
             fn get_number_character_tile() {
-                for num in 0..9 {
+                for num in 0..=9 {
                     let character_tile = Character(num);
                     assert_eq!(character_tile.number(), num);
                 }
@@ -172,7 +455,7 @@ mod tile_tests {
 
             #[test]
             fn get_number_dot_tile() {
-                for num in 0..9 {
+                for num in 0..=9 {
                     let dot_tile = Dot(num);
                     assert_eq!(dot_tile.number(), num);
                 }
@@ -180,7 +463,7 @@ mod tile_tests {
 
             #[test]
             fn get_number_bamboo_tile() {
-                for num in 0..9 {
+                for num in 0..=9 {
                     let bamboo_tile = Bamboo(num);
                     assert_eq!(bamboo_tile.number(), num);
                 }
@@ -215,7 +498,92 @@ mod tile_tests {
             }
         }
     }
-    mod get_suit_tests {}
-    mod build_tests {}
-    mod fmt_tests {}
+    mod get_suit_tests {
+        mod mahjong_tile_tests {
+            use crate::{
+                tile::{
+                    DragonColor::*,
+                    HonorTile::*,
+                    MahjongTile::{self, *},
+                    NumberTile::*,
+                    Tile,
+                },
+                Direction::*,
+            };
+
+            fn test_with_pairs(tile_number_pairs: Vec<(MahjongTile, char)>) {
+                for (tile, num) in tile_number_pairs {
+                    assert_eq!(tile.suit(), num);
+                }
+            }
+
+            #[test]
+            fn get_number_mahjong_tile() {
+                let tile_number_pairs = vec![
+                    (Number(Dot(0)), 'p'),
+                    (Number(Bamboo(3)), 's'),
+                    (Number(Character(8)), 'm'),
+                    (Honor(Wind(East)), 'z'),
+                    (Honor(Dragon(Red)), 'z'),
+                ];
+                test_with_pairs(tile_number_pairs);
+            }
+        }
+        mod number_tile_tests {
+            use crate::tile::{NumberTile::*, Tile};
+
+            #[test]
+            fn get_suit_character_tile() {
+                let character_suit = 'm';
+                for num in 0..=9 {
+                    let character_tile = Character(num);
+                    assert_eq!(character_suit, character_tile.suit());
+                }
+            }
+            #[test]
+            fn get_suit_bamboo_tile() {
+                let bamboo_suit = 's';
+                for num in 0..=9 {
+                    let bamboo_tile = Bamboo(num);
+                    assert_eq!(bamboo_suit, bamboo_tile.suit());
+                }
+            }
+
+            #[test]
+            fn get_suit_dot_tile() {
+                let dot_suit = 'p';
+                for num in 0..=9 {
+                    let dot_tile = Dot(num);
+                    assert_eq!(dot_suit, dot_tile.suit());
+                }
+            }
+        }
+
+        mod honor_tile_tests {
+            use crate::{
+                tile::{DragonColor::*, HonorTile::*, Tile},
+                Direction::*,
+            };
+
+            #[test]
+            fn get_suit_dragon_tile() {
+                let dragon_suit = 'z';
+                let dragon_colors = [White, Green, Red];
+                for dragon_color in dragon_colors {
+                    let dragon_tile = Dragon(dragon_color);
+                    assert_eq!(dragon_suit, dragon_tile.suit());
+                }
+            }
+
+            #[test]
+            fn get_suit_wind_tile() {
+                let wind_suit = 'z';
+                let wind_directions = [East, South, West, North];
+                for wind_direction in wind_directions {
+                    let wind_tile = Wind(wind_direction);
+                    assert_eq!(wind_suit, wind_tile.suit());
+                }
+            }
+        }
+    }
 }
