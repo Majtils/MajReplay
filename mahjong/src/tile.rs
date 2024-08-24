@@ -65,6 +65,12 @@ pub enum MahjongTile {
     Number(NumberTile),
 }
 
+impl fmt::Display for MahjongTile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.number(), self.suit())
+    }
+}
+
 impl Tile for MahjongTile {
     fn suit(&self) -> char {
         use crate::tile::MahjongTile::*;
@@ -96,6 +102,12 @@ pub enum NumberTile {
     Bamboo(u8),
 }
 
+impl fmt::Display for NumberTile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.number(), self.suit())
+    }
+}
+
 impl Tile for NumberTile {
     fn number(&self) -> u8 {
         use NumberTile::*;
@@ -114,6 +126,8 @@ impl Tile for NumberTile {
     }
 }
 
+use core::fmt;
+
 use crate::Direction;
 /// This type represents an honor tile. The honors are broken up to wind tiles
 /// and dragon tiles. There are four types of wind tiles and three types of
@@ -127,6 +141,12 @@ pub enum HonorTile {
     /// This represents a dragon tile. There are three variants depending on the
     /// color: white, green, red.
     Dragon(DragonColor),
+}
+
+impl fmt::Display for HonorTile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.number(), self.suit())
+    }
 }
 
 impl Tile for HonorTile {
@@ -416,7 +436,6 @@ mod tile_tests {
     }
     mod get_number_tests {
         mod mahjong_tile_tests {
-
             use crate::{
                 tile::{
                     DragonColor::*,
@@ -590,6 +609,77 @@ mod tile_tests {
                     let wind_tile = Wind(wind_direction);
                     assert_eq!(wind_suit, wind_tile.suit());
                 }
+            }
+        }
+    }
+    mod format_display_tests {
+        mod mahjong_tile_tests {
+            use crate::{
+                tile::{DragonColor::*, HonorTile::*, MahjongTile::*, NumberTile::*},
+                Direction::*,
+            };
+
+            #[test]
+            fn mahjong_tiles() {
+                let dot_tile = Number(Dot(0));
+                assert_eq!(format!("{}", dot_tile), "0p");
+                let bamboo_tile = Number(Bamboo(3));
+                assert_eq!(format!("{}", bamboo_tile), "3s");
+                let character_tile = Number(Character(8));
+                assert_eq!(format!("{}", character_tile), "8m");
+                let wind_tile = Honor(Wind(East));
+                assert_eq!(format!("{}", wind_tile), "1z");
+                let dragon_tile = Honor(Dragon(Red));
+                assert_eq!(format!("{}", dragon_tile), "7z");
+            }
+        }
+        mod number_tile_tests {
+            use crate::NumberTile::*;
+            #[test]
+            fn character_tiles() {
+                for num in 0..=9 {
+                    let tile_string = format!("{}", Character(num));
+                    let target_string = format!("{}m", num);
+                    assert_eq!(tile_string, target_string);
+                }
+            }
+            #[test]
+            fn bamboo_tiles() {
+                for num in 0..=9 {
+                    let tile_string = format!("{}", Bamboo(num));
+                    let target_string = format!("{}s", num);
+                    assert_eq!(tile_string, target_string);
+                }
+            }
+            #[test]
+            fn dot_tiles() {
+                for num in 0..=9 {
+                    let tile_string = format!("{}", Dot(num));
+                    let target_string = format!("{}p", num);
+                    assert_eq!(tile_string, target_string);
+                }
+            }
+        }
+
+        mod honor_tile_tests {
+            use crate::{
+                tile::{DragonColor::*, HonorTile::*},
+                Direction::*,
+            };
+
+            #[test]
+            fn wind_tiles() {
+                assert_eq!(format!("{}", Wind(East)), "1z");
+                assert_eq!(format!("{}", Wind(South)), "2z");
+                assert_eq!(format!("{}", Wind(West)), "3z");
+                assert_eq!(format!("{}", Wind(North)), "4z");
+            }
+
+            #[test]
+            fn dragon_tiles() {
+                assert_eq!(format!("{}", Dragon(White)), "5z");
+                assert_eq!(format!("{}", Dragon(Green)), "6z");
+                assert_eq!(format!("{}", Dragon(Red)), "7z");
             }
         }
     }
