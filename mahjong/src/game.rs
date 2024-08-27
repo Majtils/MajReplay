@@ -99,6 +99,10 @@ pub struct RoundConfig {
     /// This represents the result of the round as an array of player and point tuples sorted from
     /// most to least points. By default, this is set to `None`.
     pub result: Option<[(PlayerLocation, u32); 4]>,
+    /// Indicates the dora tiles for the round
+    pub dora: Vec<MahjongTile>,
+    /// Indicates the ura dora tiles for the round
+    pub ura_dora: Vec<MahjongTile>,
 }
 
 /// The RoundNumber enum indicates which of the four rounds within the cycle it is
