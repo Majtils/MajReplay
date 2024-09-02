@@ -65,6 +65,9 @@ pub enum MahjongTile {
     Number(NumberTile),
 }
 
+// TODO: Implement is_honor, is_number, and other helper functions
+impl MahjongTile {}
+
 impl fmt::Display for MahjongTile {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}{}", self.number(), self.suit())
@@ -243,7 +246,7 @@ pub fn build(tile_string: &str) -> Result<MahjongTile, String> {
 }
 
 #[cfg(test)]
-mod tile_tests {
+mod tests {
     mod build_tile_tests {
         mod number_tile_tests {
             use crate::{

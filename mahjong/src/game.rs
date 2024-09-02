@@ -1,5 +1,7 @@
 //! This module provides types to represent a Riichi Mahjong game
 
+use core::fmt;
+
 use crate::{Direction, MahjongTile};
 use chrono::{DateTime, Local};
 
@@ -210,6 +212,13 @@ pub struct ClosedKanMeld {
     pub tile: MahjongTile,
 }
 
+impl fmt::Display for ClosedKanMeld {
+    // TODO: Implement
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "")
+    }
+}
+
 /// This represents the number of players in a Riichi Mahjong game, which changes the game rules.
 /// There are only two options, either three-player or four-player mahjong.
 #[derive(Debug, PartialEq, Eq)]
@@ -272,67 +281,75 @@ impl PlayerLocation {
 }
 
 #[cfg(test)]
-mod game_tests {
-    mod game_config_tests {
-        mod default_tests {
+mod tests {
+    mod default_tests {
+        #[test]
+        fn game_config() {
             use crate::{GameConfig, Length, NumPlayers, RedFive, Seconds};
-
-            #[test]
-            fn working_default_test() {
-                let game_config: GameConfig = Default::default();
-                assert_eq!(game_config.num_players, NumPlayers::Four);
-                assert_eq!(game_config.length, Some(Length::East));
-                assert_eq!(game_config.main_thinking_time, Some(Seconds(20)));
-                assert_eq!(game_config.delay_thinking_time, Some(Seconds(5)));
-                assert_eq!(game_config.red_five, Some(RedFive::Three));
-                assert_eq!(game_config.hero, "player1");
-                assert_eq!(game_config.right, "player2");
-                assert_eq!(game_config.across, "player3");
-                assert_eq!(game_config.left, "player4");
-                assert!(game_config.event.is_none());
-                assert!(game_config.site.is_none());
-                assert!(game_config.date.is_none());
-            }
+            let game_config: GameConfig = Default::default();
+            assert_eq!(game_config.num_players, NumPlayers::Four);
+            assert_eq!(game_config.length, Some(Length::East));
+            assert_eq!(game_config.main_thinking_time, Some(Seconds(20)));
+            assert_eq!(game_config.delay_thinking_time, Some(Seconds(5)));
+            assert_eq!(game_config.red_five, Some(RedFive::Three));
+            assert_eq!(game_config.hero, "player1");
+            assert_eq!(game_config.right, "player2");
+            assert_eq!(game_config.across, "player3");
+            assert_eq!(game_config.left, "player4");
+            assert!(game_config.event.is_none());
+            assert!(game_config.site.is_none());
+            assert!(game_config.date.is_none());
         }
     }
-    mod player_location_tests {
-        mod move_relative_location_test {
-            use crate::game::PlayerLocation::*;
-            #[test]
-            fn move_relative_from_hero() {
-                let player = Hero;
-                assert_eq!(player.move_relative(&Hero), Hero);
-                assert_eq!(player.move_relative(&Left), Left);
-                assert_eq!(player.move_relative(&Right), Right);
-                assert_eq!(player.move_relative(&Across), Across);
-            }
+    mod display_tests {
+        #[test]
+        fn closed_kan_meld() {
+            // TODO: Add additional tests
+            use crate::{
+                ClosedKanMeld, Direction::*, DragonColor::*, HonorTile::*, MahjongTile,
+                NumberTile::*,
+            };
+            let character_5 = MahjongTile::Number(Character(5));
+            let character_5_closed_kan_meld = ClosedKanMeld { tile: character_5 };
+            assert_eq!(character_5_closed_kan_meld.to_string(), "--0m5m--")
+        }
+    }
+    mod move_relative_location_test {
+        use crate::game::PlayerLocation::*;
+        #[test]
+        fn move_relative_from_hero() {
+            let player = Hero;
+            assert_eq!(player.move_relative(&Hero), Hero);
+            assert_eq!(player.move_relative(&Left), Left);
+            assert_eq!(player.move_relative(&Right), Right);
+            assert_eq!(player.move_relative(&Across), Across);
+        }
 
-            #[test]
-            fn move_relative_from_left() {
-                let player = Left;
-                assert_eq!(player.move_relative(&Hero), Left);
-                assert_eq!(player.move_relative(&Left), Across);
-                assert_eq!(player.move_relative(&Right), Hero);
-                assert_eq!(player.move_relative(&Across), Right);
-            }
+        #[test]
+        fn move_relative_from_left() {
+            let player = Left;
+            assert_eq!(player.move_relative(&Hero), Left);
+            assert_eq!(player.move_relative(&Left), Across);
+            assert_eq!(player.move_relative(&Right), Hero);
+            assert_eq!(player.move_relative(&Across), Right);
+        }
 
-            #[test]
-            fn move_relative_from_right() {
-                let player = Right;
-                assert_eq!(player.move_relative(&Hero), Right);
-                assert_eq!(player.move_relative(&Left), Hero);
-                assert_eq!(player.move_relative(&Right), Across);
-                assert_eq!(player.move_relative(&Across), Left);
-            }
+        #[test]
+        fn move_relative_from_right() {
+            let player = Right;
+            assert_eq!(player.move_relative(&Hero), Right);
+            assert_eq!(player.move_relative(&Left), Hero);
+            assert_eq!(player.move_relative(&Right), Across);
+            assert_eq!(player.move_relative(&Across), Left);
+        }
 
-            #[test]
-            fn move_relative_from_across() {
-                let player = Across;
-                assert_eq!(player.move_relative(&Hero), Across);
-                assert_eq!(player.move_relative(&Left), Right);
-                assert_eq!(player.move_relative(&Right), Left);
-                assert_eq!(player.move_relative(&Across), Hero);
-            }
+        #[test]
+        fn move_relative_from_across() {
+            let player = Across;
+            assert_eq!(player.move_relative(&Hero), Across);
+            assert_eq!(player.move_relative(&Left), Right);
+            assert_eq!(player.move_relative(&Right), Left);
+            assert_eq!(player.move_relative(&Across), Hero);
         }
     }
 }
