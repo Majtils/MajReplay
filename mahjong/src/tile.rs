@@ -247,6 +247,26 @@ pub fn build(tile_string: &str) -> Result<MahjongTile, String> {
 
 #[cfg(test)]
 mod tests {
+    mod is_honor_tile_tests {
+        use crate::{Direction::*, DragonColor::*, HonorTile::*, MahjongTile::*, NumberTile::*};
+        #[test]
+        fn wind_tiles() {
+            let directions = [East, South, West, North];
+            for direction in directions {
+                let wind_tile = Honor(Wind(direction));
+                assert!(wind_tile.is_honor());
+            }
+        }
+
+        #[test]
+        fn dragon_tiles() {
+            let colors = [White, Green, Red];
+            for color in colors {
+                let dragon_tile = Honor(Dragon(color));
+                assert!(dragon_tile.is_honor());
+            }
+        }
+    }
     mod build_tile_tests {
         use crate::{
             tile,
