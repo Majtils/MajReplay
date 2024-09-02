@@ -266,6 +266,8 @@ mod tests {
                 assert!(dragon_tile.is_honor());
             }
         }
+
+        // TODO: Tests for non honor tiles
     }
     mod build_tile_tests {
         use crate::{
